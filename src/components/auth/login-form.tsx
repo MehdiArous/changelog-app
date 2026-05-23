@@ -15,6 +15,7 @@ import { Button } from "../ui/button"
 import Link from "next/link"
 import { FaGithub, FaGoogle } from "react-icons/fa"
 import clsx from "clsx"
+import { handleGithubSignIn, handleGoogleSignIn } from "@/app/actions/auth"
 
 const formSchema = z.object({
   email: z
@@ -101,10 +102,12 @@ export default function LoginForm() {
       <Button variant="outline" className="w-full mt-4 cursor-pointer">
         <FaGithub /> GitHub
       </Button>
-
-      <Button variant="outline" className="w-full mt-4 cursor-pointer">
-        <FaGoogle /> Google
-      </Button>
+      
+      <form action={handleGoogleSignIn}>
+        <Button variant="outline" className="w-full mt-4 cursor-pointer">
+          <FaGoogle /> Google
+        </Button>
+      </form>
       <p className="text-zinc-500 text-sm text-center mt-4">
         Don't have an account?{' '}
         <Link href="/register" className="text-purple-400">
