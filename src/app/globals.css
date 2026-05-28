@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -138,19 +139,49 @@
 }
 
 /* Target the sidebar specifically */
-.sidebar-scroll::-webkit-scrollbar {
-  width: 4px;
+::-webkit-scrollbar {
+  width: 7px;
 }
 
-.sidebar-scroll::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.sidebar-scroll::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb {
   background: #404040;
   border-radius: 999px;
 }
 
-.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+::-webkit-scrollbar-thumb:hover {
   background: #525252;
+}
+
+/* VS Code Theme for Tiptap Lowlight Code Blocks */
+.prose pre code {
+  color: #9CDCFE; /* Default variables text color */
+}
+
+.prose .hljs-keyword {
+  color: #569CD6; /* def, if, return, import */
+}
+
+.prose .hljs-string {
+  color: #CE9178; /* "I'm happy", 'strings' */
+}
+
+.prose .hljs-title.hljs-function {
+  color: #DCDCAA; /* function/method names like secure() */
+}
+
+.prose .hljs-comment {
+  color: #6A9955; /* # Python comments or // JS comments */
+  font-style: italic;
+}
+
+.prose .hljs-number {
+  color: #B5CEA8; /* Numbers like 1, 0, 14 */
+}
+
+.prose .hljs-params {
+  color: #9CDCFE; /* Function arguments */
 }

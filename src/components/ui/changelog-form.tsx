@@ -70,7 +70,7 @@ export default function ChangelogForm() {
   }
 
   return (
-    <Card className="w-full ">
+    <Card className="w-[calc(100%_-_2rem)] mt-6 px-5 py-5 mx-4">
       <CardHeader>
         <CardTitle className="text-lg">New changelog entry</CardTitle>
         <CardAction>

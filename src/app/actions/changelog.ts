@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma"
 import { changelogSchema } from "@/lib/validations/changelog"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import DOMPurify from 'isomorphic-dompurify';
 
 export type ActionState = {
   success: boolean
@@ -57,7 +58,7 @@ export async function createChangelog(
         version:     result.data.version ?? null,
         category:    result.data.category,
         status:      result.data.status,
-        body:        raw.body,
+        body:        DOMPurify.sanitize(raw.body),
         publishedAt: result.data.status === "LIVE" ? new Date() : null,
         workspaceId: workspace.id,
       },
@@ -67,5 +68,99 @@ export async function createChangelog(
     return { success: true, error: null }
   } catch (e) {
     return { success: false, error: "Something went wrong. Please try again." }
+  }
+}
+
+export async function loadMoreDrafts(workspaceId: string, skip: number) {
+  "use server"
+  const drafts = await prisma.changeLog.findMany({
+    where: { workspaceId, status: "DRAFT" },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+    skip,
+  })
+  return drafts
+}
+
+export async function deleteDraft(id: string) {
+  const session = await auth()
+  if (!session?.user) redirect("/")
+
+  const workspace = await prisma.workSpace.findUnique({
+    where: { userId: session.user.id },
+  })
+  if (!workspace) return { success: false, error: "Workspace not found" }
+
+  await prisma.changeLog.delete({
+    where: { id, workspaceId: workspace.id },
+  })
+
+  revalidatePath("/dashboard/drafts")
+  return { success: true, error: null }
+}
+
+export async function getDraft(id: string) {
+  const session = await auth()
+  if (!session?.user) redirect("/")
+
+  const workspace = await prisma.workSpace.findUnique({
+    where: { userId: session.user.id },
+  })
+  if (!workspace) return null
+
+  return await prisma.changeLog.findFirst({
+    where: { id, workspaceId: workspace.id },
+  })
+}
+
+export async function updateDraft(
+  id: string,
+  formData: FormData
+): Promise<ActionState> {
+  const session = await auth()
+  if (!session?.user) redirect("/")
+
+  const workspace = await prisma.workSpace.findUnique({
+    where: { userId: session.user.id },
+  })
+  if (!workspace) return { success: false, error: "Workspace not found" }
+
+  const raw = {
+    title:    formData.get("title") as string,
+    version:  formData.get("version") as string,
+    category: formData.get("category") as string,
+    status:   formData.get("status") as string,
+    body:     formData.get("body") as string,
+  }
+
+  const strippedBody = raw.body?.replace(/<[^>]*>/g, "").trim()
+  const result = changelogSchema.safeParse({ ...raw, body: strippedBody })
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: null,
+      fieldErrors: result.error.flatten().fieldErrors as Record<string, string[]>,
+    }
+  }
+
+  try {
+    await prisma.changeLog.update({
+      where: { id, workspaceId: workspace.id },
+      data: {
+        title:       result.data.title,
+        version:     result.data.version,
+        category:    result.data.category,
+        status:      result.data.status,
+        body:        raw.body,
+        publishedAt: result.data.status === "LIVE" ? new Date() : null,
+      },
+    })
+
+    revalidatePath("/dashboard/drafts")
+    revalidatePath("/changelog")
+    return { success: true, error: null }
+  } catch (e) {
+    return { success: false, error: "Failed to update. Please try again." }
   }
 }

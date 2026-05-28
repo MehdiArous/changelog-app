@@ -5,6 +5,8 @@ import StarterKit from "@tiptap/starter-kit"
 import { Bold, Italic, Heading2, List, Code } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Placeholder } from "@tiptap/extension-placeholder"
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { createLowlight, common } from 'lowlight'
 
 type Props = {
   onChange?: (html: string) => void
@@ -13,10 +15,18 @@ type Props = {
 
 
 const TextEditor = ({ resetKey, onChange }: Props) => {
+  // Initialize lowlight with common languages (Python, JS, HTML, etc.)
+  const lowlight = createLowlight(common)
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+            // Disable default code block so lowlight can take over
+            codeBlock: false, 
+          }),
+          CodeBlockLowlight.configure({
+            lowlight,
+          }),
       Placeholder.configure({
         placeholder: "Write your changelog content here…",
       }),
@@ -26,7 +36,7 @@ const TextEditor = ({ resetKey, onChange }: Props) => {
     editorProps: {
       attributes: {
         class: [
-          "min-h-5 w-full bg-neutral-900 px-4 py-3",
+          "min-h-40 w-full bg-neutral-900 px-4 py-3",
           "text-lg text-neutral-200 focus:outline-none leading-relaxed",
           // bullet list styles
           "[&_ul]:list-disc [&_ul]:ml-4 [&_ul]:space-y-1",
@@ -34,9 +44,17 @@ const TextEditor = ({ resetKey, onChange }: Props) => {
           "[&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-neutral-100 [&_h2]:mb-2",
           // inline code styles
           "[&_code]:bg-neutral-700 [&_code]:text-purple-300 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono",
-          // code block styles
-          "[&_pre]:bg-neutral-800 [&_pre]:border [&_pre]:border-neutral-700 [&_pre]:rounded-lg [&_pre]:p-3 [&_pre]:my-2",
-          "[&_pre_code]:bg-transparent [&_pre_code]:text-purple-300 [&_pre_code]:p-0",
+          // Code Block Container Styles
+          "[&_pre]:bg-neutral-800 [&_pre]:border [&_pre]:border-neutral-800 [&_pre]:rounded-xl [&_pre]:p-4 [&_pre]:my-4 [&_pre]:font-mono [&_pre]:text-sm",
+          
+          // Dynamic VS Code Colors for Lowlight tokens inside the editor workspace
+          "[&_.hljs-keyword]:text-[#569CD6]",     // def, if, return
+          "[&_.hljs-string]:text-[#CE9178]",      // "Strings"
+          "[&_.hljs-title.hljs-function]:text-[#DCDCAA]", // functionName()
+          "[&_.hljs-comment]:text-[#6A9955] [&_.hljs-comment]:italic", // # Comments
+          "[&_.hljs-number]:text-[#B5CEA8]",       // Numbers
+          "[&_.hljs-params]:text-[#9CDCFE]",       // Parameters
+          "[&_pre_code]:text-[#9CDCFE] [&_pre_code]:bg-transparent [&_pre_code]:p-0", // Default variable color
         ].join(" "),
       },
     },

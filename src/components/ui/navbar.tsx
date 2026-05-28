@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import Link from "next/link";
 
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
-import { FaCodeBranch, FaPowerOff } from "react-icons/fa";
+import { FaCodeBranch, FaSignOutAlt } from "react-icons/fa";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./dropdown-menu";
 import { handleSignOut } from "@/app/actions/auth";
 import { redirect } from "next/navigation";
@@ -64,7 +64,7 @@ export default async function Navbar() {
                                 type="submit"
                                 className="flex items-center gap-3 w-full text-left text-bold cursor-pointer"
                             >
-                            <FaPowerOff/>
+                            <FaSignOutAlt />
                             Log out
                             </button>
                         </form>

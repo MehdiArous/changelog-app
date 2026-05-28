@@ -70,7 +70,6 @@ export default function Sidebar() {
   return (
     <aside
       className={`
-        sidebar-scroll
         fixed left-0 top-20 h-[calc(100vh-5rem)] w-52 
         border-r border-neutral-700 bg-neutral-900
         overflow-y-auto
