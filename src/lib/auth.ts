@@ -13,5 +13,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   pages: {
     signIn: "/"
+  },
+  callbacks: {
+    async signIn({ user }) {
+      if (!user.email || !user.id) return true;
+      const result = await prisma.workSpace.findUnique({
+        where: {
+          userId: user.id
+        }
+      });
+      if (result) return true;
+      const slug = user.name?.toLowerCase().replace(/\s+/g, "-");
+      await prisma.workSpace.create({
+        data: {
+          name: user.name ?? "My Workspace",
+          slug: slug!,
+          userId: user.id,
+        }
+      });
+      return true;
+    }
   }
 });

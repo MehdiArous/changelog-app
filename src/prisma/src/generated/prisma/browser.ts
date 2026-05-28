@@ -37,3 +37,13 @@ export type User = Prisma.UserModel
  * 
  */
 export type VerificationToken = Prisma.VerificationTokenModel
+/**
+ * Model WorkSpace
+ * 
+ */
+export type WorkSpace = Prisma.WorkSpaceModel
+/**
+ * Model ChangeLog
+ * 
+ */
+export type ChangeLog = Prisma.ChangeLogModel
