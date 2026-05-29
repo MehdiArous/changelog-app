@@ -9,20 +9,50 @@ import { Field, FieldLabel } from "./field"
 import { NativeSelect, NativeSelectOption } from "./native-select"
 import { Loader2, Send } from "lucide-react"
 import { Category, Status } from "@/prisma/src/generated/prisma/enums"
-import { ActionState, createChangelog } from "@/app/actions/changelog"
+import { ActionState, createChangelog, updateDraft } from "@/app/actions/changelog"
 import { toast } from "sonner"
+import { useDraftsStore } from "@/app/store/drafts"
 
-export default function ChangelogForm() {
+type Draft = {
+  id:       string
+  title:    string
+  body:     string
+  version:  string | null
+  category: string
+  status:   string
+  createdAt: Date
+}
+
+type Props = {
+  mode?:  "create" | "edit"
+  draft?: Draft
+  onSuccess?: (updated: Draft) => void  
+}
+
+const MESSAGES = {
+  create: { loading: "Publishing...",  success: "Changelog published!" },
+  edit:   { loading: "Saving...",      success: "Draft updated!"       },
+}
+
+export default function ChangelogForm({ mode = "create", draft }: Props) {
   const formRef = useRef<HTMLFormElement>(null)
+  const { updateDraft: updateDraftInStore, closeDialog } = useDraftsStore()
   const [isPending, startTransition] = useTransition()
 
   // controlled inputs — keeps values on failed submit
-  const [title, setTitle] = useState("")
-  const [version, setVersion] = useState("")
-  const [category, setCategory] = useState("")
-  const [status, setStatus] = useState("")
+  const [title,    setTitle]    = useState(draft?.title    ?? "")
+  const [version,  setVersion]  = useState(draft?.version  ?? "")
+  const [category, setCategory] = useState(draft?.category ?? "")
+  const [status,   setStatus]   = useState(draft?.status   ?? "")
   const [resetKey, setResetKey] = useState(0)
   const bodyRef = useRef("")
+
+  // same signature for both actions
+  const action = mode === "edit"
+    ? (formData: FormData) => updateDraft(draft!.id, formData)
+    : createChangelog
+
+  const messages = MESSAGES[mode]
 
   // field errors — manual now
   const [fieldErrors, setFieldErrors] = useState<ActionState["fieldErrors"]>({})
@@ -42,17 +72,31 @@ export default function ChangelogForm() {
 
     const promise = new Promise<void>((resolve, reject) => {
       startTransition(async () => {
-        const result = await createChangelog(formData)
+        const result = await action(formData)
 
         if (result.success) {
-          // reset everything
-          setTitle("")
-          setVersion("")
-          setCategory("")
-          setStatus("")
-          setResetKey(prev => 1 + prev)
-          setFieldErrors({})
-          resolve()
+          if (mode === "edit") {
+            updateDraftInStore({
+              ...draft!,
+              title,
+              version:  version || null,
+              category,
+              status,
+              body: bodyRef.current,
+              publishedAt: status === "LIVE" ? new Date() : null,
+            })
+            closeDialog()
+            resolve()
+          } else {
+            // reset everything
+            setTitle("")
+            setVersion("")
+            setCategory("")
+            setStatus("")
+            setResetKey(prev => 1 + prev)
+            setFieldErrors({})
+            resolve()
+          }
         } else if (result.fieldErrors) {
           setFieldErrors(result.fieldErrors)
           reject(new Error("Please fix the errors below."))
@@ -63,8 +107,8 @@ export default function ChangelogForm() {
     })
 
     toast.promise(promise, {
-      loading: "Publishing...",
-      success: "Changelog published!",
+      loading: messages.loading,
+      success: messages.success,
       error: (err) => err.message,
     })
   }
@@ -72,7 +116,7 @@ export default function ChangelogForm() {
   return (
     <Card className="w-[calc(100%_-_2rem)] mt-6 px-5 py-5 mx-4">
       <CardHeader>
-        <CardTitle className="text-lg">New changelog entry</CardTitle>
+        <CardTitle className="text-lg">{mode === 'create'? "New": "Edit"} changelog entry</CardTitle>
         <CardAction>
           <Button type="submit" disabled={isPending} form="changelog-form" className="flex items-center gap-2 cursor-pointer">
           {isPending 
@@ -179,7 +223,7 @@ export default function ChangelogForm() {
             <Field>
               <FieldLabel htmlFor="content" className={`mt-4 ${fieldErrors?.body ? "text-red-500" : ""}`}>Content</FieldLabel>
               <div className={fieldErrors?.body ? "rounded-lg border border-red-500" : ""}>
-                <TextEditor onChange={(html) => { bodyRef.current = html }}  resetKey={resetKey}/>
+                <TextEditor onChange={(html) => { bodyRef.current = html }}  resetKey={resetKey} initialContent={draft?.body ?? ""}/>
               </div>  
               {fieldErrors?.body && (
                 <p className="px-2 text-red-500">{fieldErrors.body[0]}</p>

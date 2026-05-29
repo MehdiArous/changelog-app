@@ -11,10 +11,11 @@ import { createLowlight, common } from 'lowlight'
 type Props = {
   onChange?: (html: string) => void
   resetKey?: number
+  initialContent?: string
 }
 
 
-const TextEditor = ({ resetKey, onChange }: Props) => {
+const TextEditor = ({ resetKey, onChange, initialContent }: Props) => {
   // Initialize lowlight with common languages (Python, JS, HTML, etc.)
   const lowlight = createLowlight(common)
 
@@ -68,6 +69,13 @@ const TextEditor = ({ resetKey, onChange }: Props) => {
       editor.commands.clearContent()
     }
   }, [resetKey])
+
+  useEffect(() => {
+    if (!editor) return
+    if (!initialContent) return
+    if (editor.getHTML() === initialContent) return
+    editor.commands.setContent(initialContent)
+  }, [editor, initialContent])
 
   const toolbarButtons = [
     {

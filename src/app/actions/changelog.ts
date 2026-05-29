@@ -152,13 +152,12 @@ export async function updateDraft(
         version:     result.data.version,
         category:    result.data.category,
         status:      result.data.status,
-        body:        raw.body,
+        body:        DOMPurify.sanitize(raw.body),
         publishedAt: result.data.status === "LIVE" ? new Date() : null,
       },
     })
 
     revalidatePath("/dashboard/drafts")
-    revalidatePath("/changelog")
     return { success: true, error: null }
   } catch (e) {
     return { success: false, error: "Failed to update. Please try again." }

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useTransition } from "react"
 import { formatDistanceToNow } from "date-fns"
-import { Trash2, Loader2, FileText, Pencil, FileQuestion } from "lucide-react"
+import { Trash2, Loader2, Pencil, FileQuestion } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { loadMoreDrafts, deleteDraft } from "@/app/actions/changelog"
@@ -16,6 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import DraftEditDialog from "@/lib/draft-edit-dialog"
+import { useDraftsStore } from "@/app/store/drafts"
 
 type Draft = {
   id:          string
@@ -44,11 +46,18 @@ export default function DraftsList({
   totalDrafts:   number
   workspaceId:   string
 }) {
-  const [drafts, setDrafts]               = useState<Draft[]>(initialDrafts)
-  const [total, setTotal]                 = useState(totalDrafts)
-  const [isPending, startTransition]      = useTransition()
-  const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null)
-  const [dialogOpen, setDialogOpen]       = useState(false)
+  const [isPending, startTransition] = useTransition()
+
+  const {
+    drafts, total,
+    setInitial, removeDraft, appendDrafts,
+    openDialog, dialogOpen
+  } = useDraftsStore()
+
+  // hydrate store with server data
+  useEffect(() => {
+    setInitial(initialDrafts, totalDrafts)
+  }, [])
 
   const hasMore = drafts.length < total
   const router = useRouter();
@@ -56,7 +65,7 @@ export default function DraftsList({
   function handleLoadMore() {
     startTransition(async () => {
       const newDrafts = await loadMoreDrafts(workspaceId, drafts.length)
-      setDrafts(prev => [...prev, ...newDrafts as Draft[]])
+      appendDrafts(newDrafts as Draft[])
     })
   }
 
@@ -66,8 +75,7 @@ export default function DraftsList({
         startTransition(async () => {
           const result = await deleteDraft(id)
           if (result.success) {
-            setDrafts(prev => prev.filter(d => d.id !== id))
-            setTotal(prev => prev - 1)
+            removeDraft(id)
             resolve()
           } else {
             reject(new Error(result.error ?? "Failed to delete"))
@@ -80,16 +88,6 @@ export default function DraftsList({
         error:   (err) => err.message,
       }
     )
-  }
-
-  function handleEdit(draft: Draft) {
-    setSelectedDraft(draft)
-    setDialogOpen(true)
-  }
-
-  function handleUpdateSuccess(updated: Draft) {
-    setDrafts(prev => prev.map(d => d.id === updated.id ? updated : d))
-    setDialogOpen(false)
   }
 
   if (drafts.length === 0) {
@@ -177,7 +175,7 @@ export default function DraftsList({
                 <TableCell>
                   <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={e => { e.stopPropagation(); handleEdit(draft) }}
+                      onClick={e => { e.stopPropagation(); openDialog(draft) }}
                       className="p-1.5 rounded-md text-neutral-500 hover:text-blue-400 hover:bg-neutral-700 transition-colors"
                     >
                       <Pencil size={16} />
@@ -212,14 +210,7 @@ export default function DraftsList({
         </div>
       )}
 
-      {/* {selectedDraft && (
-        <DraftEditDialog
-          draft={selectedDraft}
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          onSuccess={handleUpdateSuccess}
-        />
-      )} */}
+      {dialogOpen && <DraftEditDialog />}
     </div>
   )
 }
