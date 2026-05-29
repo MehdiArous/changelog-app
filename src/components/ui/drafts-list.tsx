@@ -2,12 +2,11 @@
 
 import { useEffect, useTransition } from "react"
 import { formatDistanceToNow } from "date-fns"
-import { Trash2, Loader2, Pencil, FileQuestion } from "lucide-react"
+import { Trash2, Loader2, Pencil, FileQuestion, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { loadMoreDrafts, deleteDraft } from "@/app/actions/changelog"
 import { useRouter } from 'next/navigation'
-// import DraftEditDialog from "@/components/DraftEditDialog"
 import {
   Table,
   TableBody,
@@ -18,6 +17,8 @@ import {
 } from "@/components/ui/table"
 import DraftEditDialog from "@/lib/draft-edit-dialog"
 import { useDraftsStore } from "@/app/store/drafts"
+import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./alert-dialog"
 
 type Draft = {
   id:          string
@@ -136,8 +137,8 @@ export default function DraftsList({
                 key={draft.id}
                 className="border-neutral-800 hover:bg-neutral-800/50 cursor-pointer group"
                 onClick={(e) => {
-                    e.stopPropagation()
-                    router.push(`/dashboard/drafts/${draft.id}`)
+                  e.stopPropagation()
+                  router.push(`/dashboard/drafts/${draft.id}`)
                 }}
               >
                 {/* Category */}
@@ -151,9 +152,9 @@ export default function DraftsList({
                 <TableCell>
                   <p className="text-lg text-neutral-200 font-medium truncate max-w-[400px]">
                     {draft.title}
-                  <span className="text-base text-neutral-500 truncate max-w-[400px] mt-0.5 px-1">
-                    - {draft.body.replace(/<[^>]*>/g, " ").slice(0, 60)} 
-                  </span>
+                    <span className="text-base text-neutral-500 truncate max-w-[400px] mt-0.5 px-1">
+                      - {draft.body.replace(/<[^>]*>/g, " ").slice(0, 60)}
+                    </span>
                   </p>
                 </TableCell>
 
@@ -174,18 +175,47 @@ export default function DraftsList({
                 {/* Actions */}
                 <TableCell>
                   <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={e => { e.stopPropagation(); openDialog(draft) }}
-                      className="p-1.5 rounded-md text-neutral-500 hover:text-blue-400 hover:bg-neutral-700 transition-colors"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); handleDelete(draft.id) }}
-                      className="p-1.5 rounded-md text-neutral-500 hover:text-red-400 hover:bg-neutral-700 transition-colors"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={e => { e.stopPropagation(); openDialog(draft) }}
+                          className="p-1.5 rounded-md text-neutral-500 hover:text-blue-400 hover:bg-neutral-700 transition-colors cursor-pointer"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>Edit</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <div onClick={e => e.stopPropagation()}>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            className="p-1.5 rounded-md text-neutral-500 hover:text-red-400 hover:bg-neutral-700 transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="flex flex-row items-center gap-3 mb-4 text-xl"> <AlertTriangle color="red"/> Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-base">
+                              This action cannot be undone. This will permanently delete this draft.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(draft.id)}
+                              className="bg-red-600 text-white hover:bg-red-700 font-medium cursor-pointer"
+                            >
+                              Confirm
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>
