@@ -8,11 +8,17 @@ import { handleSignOut } from "@/app/actions/auth";
 import { redirect } from "next/navigation";
 import { Button } from "./button";
 import HamburgerButton from "./hamburger-button";
+import prisma from "@/lib/prisma";
 
 
 export default async function Navbar() {
     const session = await auth();
     if (!session?.user) redirect("/");
+
+    const workspace = await prisma.workSpace.findUnique({
+        where: { userId: session.user.id },
+    })
+    if (!workspace) redirect("/")
 
     return (
         <nav className="sticky top-0 z-50 flex items-center justify-between px-6 h-20 border-b border-neutral-700 bg-zinc-900">
@@ -31,7 +37,7 @@ export default async function Navbar() {
                     Dashboard
                 </Link>
                 <Link
-                    href="/changelog"
+                    href={`/${workspace.slug}/changelog`}
                     className="px-3 py-1.5 text-sm font-bold text-neutral-300 rounded-md hover:bg-neutral-700 transition-colors"
                 >
                     Changelog

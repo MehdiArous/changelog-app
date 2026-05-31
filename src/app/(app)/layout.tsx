@@ -7,7 +7,7 @@ import { ReactNode } from "react";
 export default function AppLayout({ children }: {children: ReactNode}) {
 
     return (
-        <div className="overflow-auto h-screen dark:bg-[radial-gradient(ellipse_at_30%_50%,rgba(120,60,255,0.25),transparent)]">
+        <div className="min-h-screen dark:bg-[radial-gradient(ellipse_at_30%_50%,rgba(120,60,255,0.25),transparent)]">
         <Navbar />
         <Sidebar />
         <SidebarContentShift>
